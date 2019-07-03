@@ -19,6 +19,7 @@ package com.example.android.todolist;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputFilter;
@@ -31,14 +32,57 @@ import android.widget.Toast;
 
 import com.example.android.todolist.data.TaskContract;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import static android.util.Half.NaN;
+
+
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+
+
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+//import android.widget.TextView;
+import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
 
 public class AddTaskActivity extends AppCompatActivity {
+
+    private String server = "107.180.55.10";
+    private int port = 21;
+    private String user = "Sign1@tiniliteworld.com";
+    private String pass = "Sign1";
+    private String fileName = "dat/Sign1.data";
 
     // Declare a member variable to keep track of a task's selected mPriority
     private int mSpeed;
 
     private int mLinelength = 24;
 
+int lineCount = 10;
     //060819 JP actually added as last update with out comment made. This stores the ids of the  text boxes
     int[] tbid = new int[10];
 
@@ -227,5 +271,134 @@ public class AddTaskActivity extends AppCompatActivity {
          }
          */
     }
+
+
+    protected static String padLeft(String s, String pad, int n) {
+
+        String returnValue;
+        returnValue =  String.format("%" + n + "s", s);
+
+        if (pad != " ") {
+            returnValue = returnValue.replace(" ", pad);
+        }
+
+        if (returnValue.length() > n ) {
+            returnValue = returnValue.substring(returnValue.length() - n);
+        }
+        return returnValue;
+    }
+
+    private String generateFileContents(){
+        int speed = 10;
+        //formatText();
+        String retval = "";
+        for (int i =0; i < lineCount; i++)
+        {
+            retval = retval +  lines[i] + "\r\n";
+        }
+
+        retval = retval +
+                "[trick coding version 2.2]\r\n" +
+                "020105010001FF050100" +
+                padLeft(Integer.toHexString(lineCount), "0", 2 ) +
+                padLeft(Integer.toHexString(speed * 10), "0", 2 ) ;
+
+
+        retval = retval.toUpperCase();
+
+        return retval;
+
+    };
+
+    public void Send(View view) {
+
+
+        String fileContent = generateFileContents();
+
+        String [] params = {            //params
+                server,                 //0
+                "" + port,              //1
+                user,                   //2
+                pass,                   //3
+                fileName,               //4
+                fileContent             //5
+
+        };
+        new SendDataTask().execute(params);
+
+    }
+
+
+    public class SendDataTask extends AsyncTask<String, Void, String[]> {
+
+        @Override
+        protected void onPreExecute() {
+        }
+
+        @Override
+        protected String[] doInBackground(String... params) {
+
+            Log.e("FTP-jp0", "begin doInBackground");
+
+
+            String server = params[0];
+            int port =   Integer.parseInt(params[1]);
+            String user = params[2];
+            String pass = params[3];
+            String fileName = params[4];
+            String fileContents = params[5];
+
+
+            FTPClient ftpClient = new FTPClient();
+
+
+            try {
+
+                ftpClient.connect(server, port);
+
+                ftpClient.login(user, pass);
+
+
+                ftpClient.enterLocalPassiveMode();
+
+                ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+                OutputStream outputStream = ftpClient.storeFileStream(fileName);
+
+                byte[] bytesIn = fileContents.getBytes() ;
+
+                outputStream.write(bytesIn, 0, fileContents.length());
+
+                outputStream.close();
+
+                boolean completed = ftpClient.completePendingCommand();
+
+
+                Log.e("FTP-jp0", fileContents);
+                //"end doInBackground " + completed  );
+            } catch (IOException ex) {
+
+
+
+                Log.e("FTP-jp0","catch block after location " );
+                System.out.println("Error: " + ex.getMessage());
+                ex.printStackTrace();
+
+
+            }
+
+
+
+            return null;
+
+        }
+
+        @Override
+        protected void onPostExecute(String[] passedData) {
+        }
+
+    }
+
+
 
 }
