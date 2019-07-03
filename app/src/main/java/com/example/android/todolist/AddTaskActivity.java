@@ -197,6 +197,8 @@ int lineCount = 10;
      * It retrieves user input and inserts that new task data into the underlying database.
      */
 
+
+
     public void onClickAddTask(View view) {
 
 
@@ -294,7 +296,7 @@ int lineCount = 10;
         String retval = "";
         for (int i =0; i < lineCount; i++)
         {
-            retval = retval +  lines[i] + "\r\n";
+            retval = retval +  ((EditText) findViewById(tbid[i])).getText().toString() + "\r\n";
         }
 
         retval = retval +
